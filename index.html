@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BricknBath Quotation Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          darkgreen: '#0C5C36',
+          lightgreen: '#2E8B57',
+          lightgray: '#F5F5F5',
+          darktext: '#222222',
+        },
+        fontFamily: {
+          display: ['Poppins', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+</head>
+<body class="bg-lightgray font-body text-darktext">
+
+  <!-- ============ TOP APP BAR ============ -->
+  <header class="no-print sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="sheet-logo">
+                <img src="./logo.png" alt="BricknBath Logo" class="logo" />
+              </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-xs text-gray-500">
+        <span class="w-2 h-2 rounded-full bg-lightgreen animate-pulse"></span>
+        Live preview syncs automatically
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN LAYOUT ============ -->
+  <main class="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 xl:grid-cols-[minmax(0,480px)_1fr] gap-6">
+
+    <!-- ================= LEFT: FORM ================= -->
+    <section class="no-print space-y-5">
+
+      <!-- Action bar -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-wrap gap-2">
+        <button id="btnSave" class="action-btn bg-darkgreen text-white hover:bg-lightgreen">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+          Save
+        </button>
+        <button id="btnPreview" class="action-btn bg-lightgreen text-white hover:bg-darkgreen">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+        <button id="btnPrint" class="action-btn bg-white text-darkgreen border border-darkgreen hover:bg-darkgreen hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+          Print
+        </button>
+        <button id="btnPdf" class="action-btn bg-amber-500 text-white hover:bg-amber-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Download PDF
+        </button>
+        <button id="btnReset" class="action-btn bg-white text-red-600 border border-red-200 hover:bg-red-50 ml-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+
+      <!-- Customer Information -->
+      <div class="form-card">
+        <h2 class="form-card-title">01 · Customer Information</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="field col-span-2">
+            <span>Customer Name</span>
+            <input type="text" id="custName" placeholder="e.g. D Gopal Reddy" />
+          </label>
+          <label class="field">
+            <span>Mobile Number</span>
+            <input type="tel" id="custMobile" placeholder="+91 98765 43210" />
+          </label>
+          <label class="field">
+            <span>Email Address</span>
+            <input type="email" id="custEmail" placeholder="name@email.com" />
+          </label>
+          <label class="field col-span-2">
+            <span>Site Address</span>
+            <input type="text" id="custAddress" placeholder="Flat / Room No, Floor, Area" />
+          </label>
+          <label class="field">
+            <span>Sales Officer (STO)</span>
+            <input type="text" id="custSTO" placeholder="e.g. Rakesh Behera" />
+          </label>
+          <label class="field">
+            <span>Quotation No.</span>
+            <input type="text" id="quoteNo" placeholder="BNB/26-27/00101" />
+          </label>
+          <label class="field">
+            <span>Date</span>
+            <input type="date" id="quoteDate" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Bathroom Details -->
+      <div class="form-card">
+        <h2 class="form-card-title">02 · Bathroom Details</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="field">
+            <span>Bathroom No.</span>
+            <input type="text" id="bathNo" value="1" />
+          </label>
+          <label class="field">
+            <span>Total Area (Sq.ft.)</span>
+            <input type="text" id="bathArea" value="0" disabled class="bg-gray-100 font-semibold text-darkgreen" />
+          </label>
+          <label class="field">
+            <span>Length (ft)</span>
+            <input type="number" step="0.1" id="bathLength" placeholder="7.5" />
+          </label>
+          <label class="field">
+            <span>Width (ft)</span>
+            <input type="number" step="0.1" id="bathWidth" placeholder="5" />
+          </label>
+          <label class="field">
+            <span>Height (ft)</span>
+            <input type="number" step="0.1" id="bathHeight" placeholder="10" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Package Selection -->
+        <div class="form-card">
+        <h2 class="form-card-title">03 · Package Selection <span class="text-xs font-normal text-gray-400 normal-case">(select one)</span></h2>
+        <div class="space-y-2" id="packageList">
+          <!-- populated by JS -->
+        </div>
+      </div>
+ 
+      <!-- Add-ons -->
+      <div class="form-card">
+        <h2 class="form-card-title">04 · Optional Add-ons</h2>
+        <div class="hidden sm:grid grid-cols-[1fr_60px_90px_90px] gap-2 px-2 mb-1 text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
+          <span>Item</span><span class="text-center">Qty</span><span class="text-right">Rate (₹)</span><span class="text-right">Amount (₹)</span>
+        </div>
+        <div id="addonList" class="space-y-2"></div>
+      </div>
+
+                   <!-- Note -->
+<div class="form-card">
+  <h2 class="form-card-title">Note</h2>
+
+  <label class="field">
+    <span>Quotation Note</span>
+    <textarea
+      id="quotationNote"
+      rows="4"
+      placeholder="Write any special note for the customer..."
+    ></textarea>
+  </label>
+</div>
+
+    </section>
+
+    <!-- ================= RIGHT: LIVE PREVIEW ================= -->
+    <section class="preview-wrapper">
+      <div class="preview-scale-frame">
+        <div id="quotationSheet" class="quotation-sheet">
+
+          <!-- Page 1 -->
+          <div class="sheet-page" id="sheetPage1">
+            <div class="sheet-header">
+              <div class="sheet-logo">
+                <img src="./logo.png" alt="BricknBath Logo" class="logo" />
+              </div>
+            </div>
+
+            <h1 class="sheet-title">Bathroom Renovation Quotation</h1>
+
+            <table class="sheet-info-table">
+              <tr>
+                <td class="w-1/2">
+                  <p><strong>Customer Name:</strong> <span id="pv-custName">—</span></p>
+                  <p><strong>Mobile:</strong> <span id="pv-custMobile">—</span></p>
+                  <p><strong>Email:</strong> <span id="pv-custEmail">—</span></p>
+                  <p><strong>Site Address:</strong> <span id="pv-custAddress">—</span></p>
+                </td>
+                <td class="w-1/2 align-top">
+                  <p><strong>Quotation No:</strong> <span id="pv-quoteNo">—</span></p>
+                  <p><strong>Date:</strong> <span id="pv-quoteDate">—</span></p>
+                  <p><strong>STO:</strong> <span id="pv-custSTO">—</span></p>
+                </td>
+              </tr>
+            </table>
+              <br>
+              <br>
+            <h3 class="sheet-section-heading">Bathroom Details</h3>
+            <table class="sheet-table">
+              <tr><th>Details</th><th>Size</th></tr>
+              <tr><td>Bathroom No.</td><td id="pv-bathNo">1</td></tr>
+              <tr><td>Length (ft)</td><td id="pv-bathLength">0</td></tr>
+              <tr><td>Width (ft)</td><td id="pv-bathWidth">0</td></tr>
+              <tr><td>Height (ft)</td><td id="pv-bathHeight">0</td></tr>
+              <tr><td>Total Area (Sq.ft.)</td><td id="pv-bathArea" class="font-bold">0</td></tr>
+            </table>
+            <br>
+            <br>
+            <h3 class="sheet-section-heading">Package Selection</h3>
+            <table class="sheet-table">
+              <tr><th>Package</th><th>Price</th><th class="w-16 text-center">Select</th></tr>
+              <tbody id="pv-packageRows"></tbody>
+            </table>
+            <br>
+            <br>
+            <h3 class="sheet-section-heading">Standard Package Includes</h3>
+            <table class="sheet-table includes-table">
+              <tr><td>✓ Demolition &amp; Civil Work</td><td>✓ Plumbing (Jaquar-Essco / Hindware / Parryware)</td></tr>
+              <tr><td>✓ Wall &amp; Floor Tiles (Orientbell / Somany / Johnson)</td><td>✓ CP Fittings (Jaquar-Essco / Hindware / Parryware)</td></tr>
+              <tr><td>✓ Waterproofing (Excluding Roof)</td><td>✓ Accessories</td></tr>
+              <tr><td>✓ Electrical (Legrand / Havells)</td><td>✓ Final Cleaning &amp; Project Handover</td></tr>
+              <tr><td>✓ Installation</td><td></td></tr>
+            </table>
+
+            <p class="sheet-footer-note">Page 1 of 2 &nbsp;·&nbsp; BricknBath Quotation</p>
+          </div>
+
+          <!-- Page 2 -->
+          <div class="sheet-page" id="sheetPage2">
+            <div class="sheet-header">
+              <div class="sheet-logo">
+                <img src="./logo.png" alt="BricknBath Logo" class="logo" />
+              </div>
+            </div>
+
+            <h3 class="sheet-section-heading mt-0">Optional Add-ons</h3>
+            <table class="sheet-table">
+              <tr><th>Item</th><th class="w-14 text-center">Qty</th><th class="w-24 text-right">Rate </th><th class="w-28 text-right">Amount</th></tr>
+              <tbody id="pv-addonRows"></tbody>
+            </table>
+             <br><br>
+           <table class="sheet-total-table">
+
+    <tr>
+        <td class="label">Package Price</td>
+        <td class="value" id="pv-packagePrice">₹0</td>
+    </tr>
+
+    <tr>
+        <td class="label">Add-ons Total</td>
+        <td class="value" id="pv-addonTotal">₹0</td>
+    </tr>
+
+    <tr class="grand">
+        <td class="label">Grand Total</td>
+        <td class="value" id="pv-grandTotal">₹0</td>
+    </tr>
+
+</table>
+             
+
+            <h3 class="sheet-section-heading">Payment Terms</h3>
+            <table class="sheet-table payment-table">
+              <tr><td>20% Booking Advance</td><td id="pv-pay1" class="text-right">₹0</td></tr>
+              <tr><td>40% Before Material Delivery</td><td id="pv-pay2" class="text-right">₹0</td></tr>
+              <tr><td>30% Before Installation</td><td id="pv-pay3" class="text-right">₹0</td></tr>
+              <tr><td>10% Before Project Handover</td><td id="pv-pay4" class="text-right">₹0</td></tr>
+            </table>
+             <br><br>
+             <!-- Note
+<div class="form-card">
+  <h2 class="form-card-title">Note</h2>
+
+  <label class="field">
+    <span>Quotation Note</span>
+    <textarea
+      id="quotationNote"
+      rows="4"
+      placeholder="Write any special note for the customer..."
+    ></textarea>
+  </label>
+</div> -->
+            <!-- USER NOTE -->
+<div id="quotationNotePreview" class="sheet-note" style="display:none;">
+  <h3 class="sheet-section-heading">Note</h3>
+  <p id="pv-quotationNote"></p>
+</div>
+            <h3 class="sheet-section-heading">Terms &amp; Conditions</h3>
+            <ol class="sheet-terms" type="1">
+              <li><ul>Quotation valid for 15 days.</ul></li>
+              <li>Standard package is applicable only for a standard bathroom size.</li>
+              <li>Additional bathroom area / height will be charged separately.</li>
+              <li>Any additional work requested will be treated as an add-on.</li>
+              <li>Delivery timeline is subject to site readiness.</li>
+            </ol>
+              <br>
+              <br>
+            <table class="sheet-signature-table">
+              <tr>
+                <td>
+                  <div class="sig-line"></div>
+                  <p>Customer Signature</p>
+                </td>
+                <td>
+                  <!-- <div class="sig-line sig-authorized">Authorized</div> -->
+                  <p>Authorized Signatory</p>
+                </td>
+              </tr>
+            </table>
+
+            <p class="sheet-footer-note">Page 2 of 2 &nbsp;·&nbsp; BricknBath Quotation &nbsp;·&nbsp; Powered by Bricknbar Hub PVT Limited</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast no-print"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
