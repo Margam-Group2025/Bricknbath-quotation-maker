@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="patch.css" />
 <script>
   tailwind.config = {
     theme: {
@@ -138,24 +139,23 @@
         </div>
       </div>
 
-      <!-- Package Selection -->
-        <div class="form-card">
-        <h2 class="form-card-title">03 · Package Selection <span class="text-xs font-normal text-gray-400 normal-case">(select one)</span></h2>
-        <div class="space-y-2" id="packageList">
-          <!-- populated by JS -->
-        </div>
+      <!-- Package Selection (form control) -->
+      <div class="form-card">
+        <h2 class="form-card-title">03 · Package Selection</h2>
+        <div id="packageList" class="space-y-2"></div>
       </div>
- 
+
       <!-- Add-ons -->
       <div class="form-card">
         <h2 class="form-card-title">04 · Optional Add-ons</h2>
-        <div class="hidden sm:grid grid-cols-[1fr_60px_90px_90px] gap-2 px-2 mb-1 text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
-          <span>Item</span><span class="text-center">Qty</span><span class="text-right">Rate (₹)</span><span class="text-right">Amount (₹)</span>
+        <div class="hidden sm:grid grid-cols-[1fr_55px_120px_80px_110px_90px] gap-2 px-2 mb-1 text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
+          <span>Item</span><span class="text-center">Qty</span><span>Prefix</span><span class="text-right">Rate (₹)</span><span>Unit</span>
+          <!-- <span class="text-right">Amount (₹)</span> -->
         </div>
         <div id="addonList" class="space-y-2"></div>
       </div>
 
-                   <!-- Note -->
+       <!-- Note -->
 <div class="form-card">
   <h2 class="form-card-title">Note</h2>
 
@@ -167,6 +167,45 @@
       placeholder="Write any special note for the customer..."
     ></textarea>
   </label>
+</div>
+     <!-- Extra Sq.ft. -->
+<div class="form-card">
+  <h2 class="form-card-title">
+    05 · Extra Sq.ft.
+    <span class="text-xs font-normal text-gray-400 normal-case">
+      (optional)
+    </span>
+  </h2>
+
+  <div class="grid grid-cols-2 gap-3">
+
+    <label class="field">
+      <span>Extra Sq.ft.</span>
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        id="extraSqft"
+        placeholder="e.g. 10"
+      />
+    </label>
+
+    <label class="field">
+      <span>Rate / Sq.ft. (₹)</span>
+      <input
+        type="number"
+        min="0"
+        step="1"
+        id="extraSqftRate"
+        placeholder="e.g. 500"
+      />
+    </label>
+
+  </div>
+
+  <p class="text-xs text-gray-400 mt-2">
+    Leave blank if extra area is not required.
+  </p>
 </div>
 
     </section>
@@ -205,29 +244,105 @@
               <br>
             <h3 class="sheet-section-heading">Bathroom Details</h3>
             <table class="sheet-table">
-              <tr><th>Details</th><th>Size</th></tr>
-              <tr><td>Bathroom No.</td><td id="pv-bathNo">1</td></tr>
-              <tr><td>Length (ft)</td><td id="pv-bathLength">0</td></tr>
-              <tr><td>Width (ft)</td><td id="pv-bathWidth">0</td></tr>
-              <tr><td>Height (ft)</td><td id="pv-bathHeight">0</td></tr>
-              <tr><td>Total Area (Sq.ft.)</td><td id="pv-bathArea" class="font-bold">0</td></tr>
+              <thead>
+                <tr><th>Details</th><th>Size</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Bathroom No.</td><td id="pv-bathNo">1</td></tr>
+                <tr><td>Length (ft)</td><td id="pv-bathLength">0</td></tr>
+                <tr><td>Width (ft)</td><td id="pv-bathWidth">0</td></tr>
+                <tr><td>Height (ft)</td><td id="pv-bathHeight">0</td></tr>
+                <tr><td>Total Area (Sq.ft.)</td><td id="pv-bathArea" class="font-bold">0</td></tr>
+              </tbody>
             </table>
             <br>
             <br>
-            <h3 class="sheet-section-heading">Package Selection</h3>
-            <table class="sheet-table">
-              <tr><th>Package</th><th>Price</th><th class="w-16 text-center">Select</th></tr>
-              <tbody id="pv-packageRows"></tbody>
-            </table>
+
+            <!-- Package Selection preview: entire section hidden until the
+                 user picks a package in the form (see script.js). Once
+                 picked, only that package's row shows here. -->
+            <div id="pv-packageSection">
+              <h3 class="sheet-section-heading">Package Selection</h3>
+              <table class="sheet-table package-table">
+                <thead>
+                  <tr><th>Package</th><th>Price</th><th class="w-16 text-center">Select</th></tr>
+                </thead>
+                <tbody id="pv-packageRows"></tbody>
+              </table>
+            </div>
+            <br>
+
+            <!-- Extra Sq.ft. Preview -->
+<table
+  class="sheet-table"
+  id="pv-extraSqftTable"
+  style="display: none;"
+>
+
+  <thead>
+
+    <tr>
+      <th>Extra Work</th>
+
+      <th class="w-14 text-center">
+        Qty
+      </th>
+
+      <th class="w-24 text-right">
+        Rate
+      </th>
+
+      <th class="w-28 text-right">
+        Amount
+      </th>
+    </tr>
+
+  </thead>
+  <tbody>
+
+    <tr>
+
+      <td>
+        Extra Sq.ft.
+      </td>
+
+      <td
+        id="pv-extraSqftQty"
+        class="text-center"
+      >
+        0
+      </td>
+
+      <td
+        id="pv-extraSqftRate"
+        class="text-right"
+      >
+        ₹0
+      </td>
+
+      <td
+        id="pv-extraSqftAmount"
+        class="text-right font-semibold"
+      >
+        ₹0
+      </td>
+
+    </tr>
+
+  </tbody>
+
+</table>
             <br>
             <br>
             <h3 class="sheet-section-heading">Standard Package Includes</h3>
             <table class="sheet-table includes-table">
-              <tr><td>✓ Demolition &amp; Civil Work</td><td>✓ Plumbing (Jaquar-Essco / Hindware / Parryware)</td></tr>
-              <tr><td>✓ Wall &amp; Floor Tiles (Orientbell / Somany / Johnson)</td><td>✓ CP Fittings (Jaquar-Essco / Hindware / Parryware)</td></tr>
-              <tr><td>✓ Waterproofing (Excluding Roof)</td><td>✓ Accessories</td></tr>
-              <tr><td>✓ Electrical (Legrand / Havells)</td><td>✓ Final Cleaning &amp; Project Handover</td></tr>
-              <tr><td>✓ Installation</td><td></td></tr>
+              <tbody>
+                <tr><td>✓ Demolition &amp; Civil Work</td><td>✓ Plumbing (Jaquar-Essco / Hindware / Parryware)</td></tr>
+                <tr><td>✓ Wall &amp; Floor Tiles (Orientbell / Somany / Johnson)</td><td>✓ CP Fittings (Jaquar-Essco / Hindware / Parryware)</td></tr>
+                <tr><td>✓ Waterproofing (Excluding Roof)</td><td>✓ Accessories</td></tr>
+                <tr><td>✓ Electrical (Legrand / Havells)</td><td>✓ Final Cleaning &amp; Project Handover</td></tr>
+                <tr><td>✓ Installation</td><td></td></tr>
+              </tbody>
             </table>
 
             <p class="sheet-footer-note">Page 1 of 2 &nbsp;·&nbsp; BricknBath Quotation</p>
@@ -243,51 +358,96 @@
 
             <h3 class="sheet-section-heading mt-0">Optional Add-ons</h3>
             <table class="sheet-table">
-              <tr><th>Item</th><th class="w-14 text-center">Qty</th><th class="w-24 text-right">Rate </th><th class="w-28 text-right">Amount</th></tr>
+              <thead>
+                <tr><th>Item</th><th class="w-14 text-center">Qty</th><th class="w-24 text-right">Rate</th><th class="w-28 text-right">Amount</th></tr>
+              </thead>
               <tbody id="pv-addonRows"></tbody>
             </table>
              <br><br>
-           <table class="sheet-total-table">
+          <table class="sheet-total-table">
 
-    <tr>
-        <td class="label">Package Price</td>
-        <td class="value" id="pv-packagePrice">₹0</td>
-    </tr>
+  <!-- Package -->
+  <tr>
 
-    <tr>
-        <td class="label">Add-ons Total</td>
-        <td class="value" id="pv-addonTotal">₹0</td>
-    </tr>
+    <td class="label">
+      Package Price
+    </td>
 
-    <tr class="grand">
-        <td class="label">Grand Total</td>
-        <td class="value" id="pv-grandTotal">₹0</td>
-    </tr>
+    <td
+      class="value"
+      id="pv-packagePrice"
+    >
+      ₹0
+    </td>
+
+  </tr>
+
+  <!-- Add-ons -->
+  <tr>
+
+    <td class="label">
+      Add-ons Total
+    </td>
+
+    <td
+      class="value"
+      id="pv-addonTotal"
+    >
+      ₹0
+    </td>
+
+  </tr>
+
+  <!-- Extra Sq.ft. -->
+  <tr
+    id="pv-extraSqftTotalRow"
+    style="display: none;"
+  >
+
+    <td class="label">
+      Extra Sq.ft. Charges
+    </td>
+
+    <td
+      class="value"
+      id="pv-extraSqftTotal"
+    >
+      ₹0
+    </td>
+
+  </tr>
+
+  <!-- Grand Total -->
+  <tr class="grand">
+
+    <td class="label">
+      Grand Total
+    </td>
+
+    <td
+      class="value"
+      id="pv-grandTotal"
+    >
+      ₹0
+    </td>
+
+  </tr>
 
 </table>
              
 
-            <h3 class="sheet-section-heading">Payment Terms</h3>
-            <table class="sheet-table payment-table">
-              <tr><td>20% Booking Advance</td><td id="pv-pay1" class="text-right">₹0</td></tr>
-              <tr><td>40% Before Material Delivery</td><td id="pv-pay2" class="text-right">₹0</td></tr>
-              <tr><td>30% Before Installation</td><td id="pv-pay3" class="text-right">₹0</td></tr>
-              <tr><td>10% Before Project Handover</td><td id="pv-pay4" class="text-right">₹0</td></tr>
-            </table>
+            <div id="pv-paymentSection">
+              <h3 class="sheet-section-heading">Payment Terms</h3>
+              <table class="sheet-table payment-table">
+                <tbody>
+                  <tr><td>20% Booking Advance</td><td id="pv-pay1" class="text-right">₹0</td></tr>
+                  <tr><td>40% Before Material Delivery</td><td id="pv-pay2" class="text-right">₹0</td></tr>
+                  <tr><td>30% Before Installation</td><td id="pv-pay3" class="text-right">₹0</td></tr>
+                  <tr><td>10% Before Project Handover</td><td id="pv-pay4" class="text-right">₹0</td></tr>
+                </tbody>
+              </table>
+            </div>
              <br><br>
-             <!-- Note
-<div class="form-card">
-  <h2 class="form-card-title">Note</h2>
-
-  <label class="field">
-    <span>Quotation Note</span>
-    <textarea
-      id="quotationNote"
-      rows="4"
-      placeholder="Write any special note for the customer..."
-    ></textarea>
-  </label>
-</div> -->
             <!-- USER NOTE -->
 <div id="quotationNotePreview" class="sheet-note" style="display:none;">
   <h3 class="sheet-section-heading">Note</h3>
@@ -295,7 +455,7 @@
 </div>
             <h3 class="sheet-section-heading">Terms &amp; Conditions</h3>
             <ol class="sheet-terms" type="1">
-              <li><ul>Quotation valid for 15 days.</ul></li>
+              <li>Quotation valid for 15 days.</li>
               <li>Standard package is applicable only for a standard bathroom size.</li>
               <li>Additional bathroom area / height will be charged separately.</li>
               <li>Any additional work requested will be treated as an add-on.</li>

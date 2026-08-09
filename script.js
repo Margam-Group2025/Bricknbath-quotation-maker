@@ -3,33 +3,37 @@ const STORAGE_KEY = 'bricknbath_quotation_v1';
 /* ---------- Default state ---------- */
 const defaultState = {
   cust: {
-    name: '', mobile: '', email: '', address: '', sto: '', note: '',
+    name: '', mobile: '', email: '', address: '', sto: '', note: '', rate: 0,
     quoteNo: '', date: new Date().toISOString().slice(0, 10)
   },
   bath: { no: '1', length: '', width: '', height: '' },
+  extraSqft: {
+    qty: '',
+    rate: ''
+  },
   packages: [
     { key: 'aura', name: 'Aura Package', price: 156489 },
     { key: 'prestige', name: 'Prestige Package', price: 119900 },
     { key: 'elite', name: 'Elite Package', price: 2548145 },
     { key: 'signature', name: 'Signature Package', price: 8655544 },
   ],
-  selectedPackage: 'prestige',
+  selectedPackage: null,
 
   addons: [
-    { key: "glass", name: "Glass Partition", qty: 0, rate: 0, unit: "Per Sq. Ft." , prefix: "Starting from"},
-    { key: "shower", name: "Shower Enclosure", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "rain", name: "Rain Shower", qty: 0, rate: 0, unit: "Each" , prefix: ""},
-    { key: "niche", name: "Niche Shelf", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "cistern", name: "Concealed Cistern Upgrade", qty: 0, rate: 0, unit: "Each" , prefix: ""},
-    { key: "designer", name: "Designer Accessories", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "vanity", name: "Vanity Cabinet Upgrade", qty: 0, rate: 0, unit: "Each" , prefix: ""},
-    { key: "premiumcp", name: "Premium CP Fittings", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "smartwc", name: "Smart WC", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "storage", name: "More Storage Options", qty: 0, rate: 0, unit: "Per Unit" , prefix: "Starting from"},
-    { key: "tiles", name: "Premium Tile Upgrade", qty: 0, rate: 0, unit: "Per Sq. Ft." , prefix: "Starting from"},
-    { key: "geyser", name: "Geyser Installation", qty: 0, rate: 0, unit: "Each" , prefix: ""},
-    { key: "led", name: "LED Smart Mirror", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"},
-    { key: "ceiling", name: "False Ceiling", qty: 0, rate: 0, unit: "Each" , prefix: "Starting from"}
+    { key: "glass", name: "Glass Partition", qty: 0, rate: 0, unit: "Per Sq. Ft.", prefix: "Starting from" },
+    { key: "shower", name: "Shower Enclosure", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "rain", name: "Rain Shower", qty: 0, rate: 0, unit: "Each", prefix: "" },
+    { key: "niche", name: "Niche Shelf", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "cistern", name: "Concealed Cistern Upgrade", qty: 0, rate: 0, unit: "Each", prefix: "" },
+    { key: "designer", name: "Designer Accessories", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "vanity", name: "Vanity Cabinet Upgrade", qty: 0, rate: 0, unit: "Each", prefix: "" },
+    { key: "premiumcp", name: "Premium CP Fittings", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "smartwc", name: "Smart WC", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "storage", name: "More Storage Options", qty: 0, rate: 0, unit: "Per Unit", prefix: "Starting from" },
+    { key: "tiles", name: "Premium Tile Upgrade", qty: 0, rate: 0, unit: "Per Sq. Ft.", prefix: "Starting from" },
+    { key: "geyser", name: "Geyser Installation", qty: 0, rate: 0, unit: "Each", prefix: "" },
+    { key: "led", name: "LED Smart Mirror", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" },
+    { key: "ceiling", name: "False Ceiling", qty: 0, rate: 0, unit: "Each", prefix: "Starting from" }
   ]
 };
 
@@ -56,54 +60,87 @@ function showToast(msg) {
 function el(id) { return document.getElementById(id); }
 
 function renderPackageForm() {
-  const wrap = el("packageList");
-  wrap.innerHTML = "";
 
-  state.packages.forEach((pkg) => {
-    const isSelected = state.selectedPackage === pkg.key;
+  const wrap = el('packageList');
 
-    const row = document.createElement("label");
-    row.className = "package-option" + (isSelected ? " selected" : "");
+  if (!wrap) return;
+
+  wrap.innerHTML = '';
+
+  state.packages.forEach(pkg => {
+
+    const isSelected =
+      state.selectedPackage === pkg.key;
+
+    const row = document.createElement('label');
+
+    row.className =
+      'package-option' +
+      (isSelected ? ' selected' : '');
 
     row.innerHTML = `
+
       <input
         type="radio"
         name="pkgRadio"
         value="${pkg.key}"
-        data-key="${pkg.key}"
-        ${isSelected ? "checked" : ""}
-      />
+        ${isSelected ? 'checked' : ''}
+      >
 
       <span class="pkg-name">
         ${pkg.name}
       </span>
 
       <input
-        type="number"bindSimpleFields
+        type="number"
         class="pkg-price-input"
         data-key="${pkg.key}"
-        value="${pkg.price}"
-      />
+        value="${pkg.price} "
+        min="0"
+        step="1"
+      >
+
     `;
 
     wrap.appendChild(row);
   });
+  // Package select
+  wrap
+    .querySelectorAll('input[name="pkgRadio"]')
+    .forEach(radio => {
 
-  document.querySelectorAll('input[name="pkgRadio"]').forEach((radio) => {
-    radio.addEventListener("change", function () {
-      state.selectedPackage = this.value;
-      renderPackageForm();
-      syncPreview();
-    });
-  });
+      radio.addEventListener('change', function () {
 
-  document.querySelectorAll(".pkg-price-input").forEach((input) => {
-    input.addEventListener("input", function () {
-      const pkg = state.packages.find((p) => p.key === this.dataset.key);
-      pkg.price = Number(this.value) || 0;
-      syncPreview();
+        state.selectedPackage = this.value;
+
+        renderPackageForm();
+
+        syncPreview();
+      });
+
     });
-  });
+  // Package price change
+  wrap
+    .querySelectorAll('.pkg-price-input')
+    .forEach(input => {
+
+      input.addEventListener('input', function () {
+
+        const key = this.dataset.key;
+
+        const pkg = state.packages.find(
+          p => p.key === key
+        );
+
+        if (!pkg) return;
+
+        pkg.price =
+          parseFloat(this.value) || 0;
+
+        syncPreview();
+      });
+
+    });
 }
 
 const ADDON_UNIT_OPTIONS = ["Each", "Per Unit", "Per Sq. Ft."];
@@ -129,28 +166,31 @@ function renderAddonForm() {
         min="0"
         class="addon-qty"
         data-key="${addon.key}"
+        data-label="Qty"
         value="${addon.qty}"
       />
 
-       <select class="addon-prefix" data-key="${addon.key}">
+      <select class="addon-prefix" data-key="${addon.key}" data-label="Prefix">
         <option value="">Select</option>
         <option value="Starting from"
             ${addon.prefix === "Starting from" ? "selected" : ""}>
             Starting from
         </option>
-    </select>
+      </select>
 
       <input
         type="number"
         min="0"
         class="addon-rate"
         data-key="${addon.key}"
+        data-label="Rate (₹)"
         value="${addon.rate}"
       />
-      
+
       <select
         class="addon-unit"
         data-key="${addon.key}"
+        data-label="Unit"
       >
         ${unitOptionsHtml}
       </select>
@@ -171,34 +211,14 @@ function renderAddonForm() {
     });
   });
 
-  wrap.querySelectorAll(".addon-prefix").forEach((item) => {
-
-    item.addEventListener("change", function () {
-
-        const addon = state.addons.find(
-            a => a.key === this.dataset.key
-        );
-
-        addon.prefix = this.value;
-
-        syncPreview();
+  wrap.querySelectorAll('.addon-prefix').forEach((item) => {
+    item.addEventListener('change', function () {
+      const addon = state.addons.find(a => a.key === this.dataset.key);
+      addon.prefix = this.value;
+      syncPreview();
     });
+  });
 
-});
- document.querySelectorAll(".addon-prefix").forEach((item) => {
-
-    item.addEventListener("change", function () {
-
-        const addon = state.addons.find(
-            a => a.key === this.dataset.key
-        );
-
-        addon.prefix = this.value;
-
-        syncPreview();
-    });
-
-});
   wrap.querySelectorAll('.addon-rate').forEach(inp => {
     inp.addEventListener('input', e => {
       const addon = state.addons.find(a => a.key === e.target.dataset.key);
@@ -234,22 +254,38 @@ function bindSimpleFields() {
     ['quoteNo', 'cust', 'quoteNo'],
     ['quoteDate', 'cust', 'date'],
     ['quotationNote', 'cust', 'note'],
+
     ['bathNo', 'bath', 'no'],
     ['bathLength', 'bath', 'length'],
     ['bathWidth', 'bath', 'width'],
     ['bathHeight', 'bath', 'height'],
+    // Extra Sq.ft.
+    ['extraSqft', 'extraSqft', 'qty'],
+    ['extraSqftRate', 'extraSqft', 'rate']
   ];
   map.forEach(([id, group, key]) => {
+
     const input = el(id);
-    input.value = state[group][key];
+
+    if (!input) return;
+
+    input.value = state[group]?.[key] || '';
+
     input.addEventListener('input', () => {
+
       state[group][key] = input.value;
-      if (group === 'bath') updateArea();
+
+      if (group === 'bath') {
+        updateArea();
+      }
+
       syncPreview();
     });
+
   });
   updateArea();
 }
+
 
 function updateArea() {
   const l = parseFloat(state.bath.length) || 0;
@@ -263,13 +299,39 @@ function updateArea() {
    CALCULATIONS
    ========================================================== */
 function getSelectedPackage() {
-  return state.packages.find(p => p.key === state.selectedPackage) || { name: '—', price: 0 };
+  if (!state.selectedPackage) return null;
+  return state.packages.find(p => p.key === state.selectedPackage) || null;
 }
 function getAddonTotal() {
   return state.addons.reduce((sum, a) => sum + (a.qty || 0) * (a.rate || 0), 0);
 }
+function getExtraSqftTotal() {
+
+  const qty = parseFloat(state.extraSqft?.qty) || 0;
+
+  const rate = parseFloat(state.extraSqft?.rate) || 0;
+
+  return qty * rate;
+}
+// grand total — package price is included ONLY when a package is selected
 function getGrandTotal() {
-  return getSelectedPackage().price + getAddonTotal();
+
+  const selectedPkg = getSelectedPackage();
+
+  const packagePrice =
+    selectedPkg ? (selectedPkg.price || 0) : 0;
+
+  const addonTotal =
+    getAddonTotal();
+
+  const extraSqftTotal =
+    getExtraSqftTotal();
+
+  return (
+    packagePrice +
+    addonTotal +
+    extraSqftTotal
+  );
 }
 
 /* ==========================================================
@@ -286,15 +348,15 @@ function syncPreview() {
   el('pv-quoteDate').textContent = formatDate(state.cust.date);
 
   const noteBox = el('quotationNotePreview');
-const noteText = el('pv-quotationNote');
+  const noteText = el('pv-quotationNote');
 
-if (state.cust.note && state.cust.note.trim() !== '') {
-  noteText.textContent = state.cust.note;
-  noteBox.style.display = 'block';
-} else {
-  noteText.textContent = '';
-  noteBox.style.display = 'none';
-}
+  if (state.cust.note && state.cust.note.trim() !== '') {
+    noteText.textContent = state.cust.note;
+    noteBox.style.display = 'block';
+  } else {
+    noteText.textContent = '';
+    noteBox.style.display = 'none';
+  }
 
   // Bathroom details
   el('pv-bathNo').textContent = state.bath.no || '1';
@@ -303,22 +365,35 @@ if (state.cust.note && state.cust.note.trim() !== '') {
   el('pv-bathHeight').textContent = state.bath.height || '0';
   el('pv-bathArea').textContent = state.bath.area || '0';
 
-  // Package table
+  /* ================= PACKAGE TABLE (dynamic) =================
+     Nothing shows in the quotation until the user actually selects
+     a package in the form. Once selected, only that one package's
+     row appears here — the whole section is hidden otherwise. */
+  const pkgSection = el('pv-packageSection');
   const pkgBody = el("pv-packageRows");
+  const selectedPkg = getSelectedPackage();
+
   pkgBody.innerHTML = "";
 
-  state.packages.forEach((pkg) => {
-    const isSelected = pkg.key === state.selectedPackage;
+  if (!selectedPkg) {
+    // No package chosen yet — hide the entire section in the preview
+    if (pkgSection) pkgSection.style.display = 'none';
+  } else {
+    // A package is chosen — show the section with ALL packages listed,
+    // but only the selected one has its price filled in; the rest stay blank.
+    if (pkgSection) pkgSection.style.display = '';
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${pkg.name}</td>
-      <td>${isSelected ? formatINR(pkg.price) : "—"}</td>
-      <td>${isSelected ? "✓" : ""}</td>
-    `;
-
-    pkgBody.appendChild(tr);
-  });
+    state.packages.forEach((pkg) => {
+      const isSelected = pkg.key === state.selectedPackage;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${pkg.name}</td>
+        <td>${isSelected ? formatINR(pkg.price) + " (Incd. GST)" : "—"}</td>
+        <td class="pkg-check">${isSelected ? "✓" : "—"}</td>
+      `;
+      pkgBody.appendChild(tr);
+    });
+  }
 
   // Add-on table
   const addonBody = el("pv-addonRows");
@@ -336,33 +411,73 @@ if (state.cust.note && state.cust.note.trim() !== '') {
         ${isSelected ? addon.qty : "-"}
       </td>
       <td class="text-right">
-    ${
-        isSelected
+        ${
+          isSelected
             ? `${addon.prefix} ${formatINR(addon.rate)}/- ${addon.unit}`
             : "-"
-    }
-     </td> 
+        }
+      </td>
       <td class="text-right">
-       ${isSelected ? `${formatINR(amount)} /-*` : "-"  }
+        ${isSelected ? `${formatINR(amount)} /-*` : "-"}
       </td>
     `;
 
     addonBody.appendChild(tr);
   });
 
-  // Totals
-  const pkgPrice = getSelectedPackage().price;
+  // ================= TOTALS =================
+  // Package price only counts toward the grand total when a package
+  // is actually selected — otherwise it contributes ₹0.
+
+  const pkgPrice = selectedPkg ? (selectedPkg.price || 0) : 0;
+
   const addonTotal = getAddonTotal();
-  const grandTotal = getGrandTotal();
+
+  const extraQty = parseFloat(state.extraSqft?.qty) || 0;
+  const extraRate = parseFloat(state.extraSqft?.rate) || 0;
+  const extraSqftTotal = extraQty * extraRate;
+
+  const grandTotal = pkgPrice + addonTotal + extraSqftTotal;
+
   el('pv-packagePrice').textContent = formatINR(pkgPrice);
   el('pv-addonTotal').textContent = formatINR(addonTotal);
-  el('pv-grandTotal').textContent = formatINR(grandTotal);
+  el('pv-grandTotal').textContent = formatINR(grandTotal) + " (Incd. GST)";
 
-  // Payment terms
-  el('pv-pay1').textContent = formatINR(grandTotal * 0.20);
-  el('pv-pay2').textContent = formatINR(grandTotal * 0.40);
-  el('pv-pay3').textContent = formatINR(grandTotal * 0.30);
-  el('pv-pay4').textContent = formatINR(grandTotal * 0.10);
+  // ================= EXTRA SQ.FT. =================
+
+  const extraTable = el('pv-extraSqftTable');
+  const extraTotalRow = el('pv-extraSqftTotalRow');
+
+  if (extraQty > 0 && extraRate > 0) {
+
+    if (extraTable) extraTable.style.display = 'table';
+    if (extraTotalRow) extraTotalRow.style.display = 'table-row';
+
+    el('pv-extraSqftQty').textContent = extraQty;
+    el('pv-extraSqftRate').textContent = formatINR(extraRate);
+    el('pv-extraSqftAmount').textContent = formatINR(extraSqftTotal);
+    el('pv-extraSqftTotal').textContent = formatINR(extraSqftTotal);
+
+  } else {
+    if (extraTable) extraTable.style.display = 'none';
+    if (extraTotalRow) extraTotalRow.style.display = 'none';
+  }
+
+  // ================= PAYMENT TERMS =================
+  // Only show payment terms once a package has been selected.
+
+  const paymentSection = el('pv-paymentSection');
+
+  if (!selectedPkg) {
+    if (paymentSection) paymentSection.style.display = 'none';
+  } else {
+    if (paymentSection) paymentSection.style.display = '';
+
+    el('pv-pay1').textContent = formatINR(grandTotal * 0.20);
+    el('pv-pay2').textContent = formatINR(grandTotal * 0.40);
+    el('pv-pay3').textContent = formatINR(grandTotal * 0.30);
+    el('pv-pay4').textContent = formatINR(grandTotal * 0.10);
+  }
 }
 
 /* ==========================================================

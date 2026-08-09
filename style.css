@@ -457,3 +457,288 @@ body{
   color: #333;
   white-space: pre-wrap;
 }
+/* ================= EXTRA SQ.FT. ================= */
+
+#pv-extraSqftTable {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#pv-extraSqftTable td {
+  font-size: 0.7rem;
+}
+
+#pv-extraSqftTotalRow td {
+  font-size: 0.72rem;
+}
+
+#pv-extraSqftTotalRow .value {
+  color: var(--dark-green);
+  font-weight: 700;
+}
+/* ================= PACKAGE TOGGLE ================= */
+
+.package-toggle {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.package-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 30px;
+  transition: 0.25s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.package-toggle input:checked + .toggle-slider {
+  background: var(--dark-green);
+}
+
+.package-toggle input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
+
+
+/* ================= PACKAGE ROW ================= */
+
+.package-option {
+  display: grid;
+  grid-template-columns: 22px 1fr 150px 35px;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+
+  background: white;
+}
+
+.package-option.selected {
+  border-color: var(--light-green);
+  background: rgba(46,139,87,0.06);
+}
+
+.package-option input[type="radio"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--dark-green);
+}
+
+.pkg-name-input,
+.pkg-price-input {
+  width: 100%;
+  border: 1px solid #e1e1e1;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.pkg-name-input:focus,
+.pkg-price-input:focus {
+  outline: none;
+  border-color: var(--light-green);
+}
+
+.remove-package {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.remove-package:hover {
+  background: #fecaca;
+}
+
+@media(max-width:639px) {
+
+  .package-option {
+    grid-template-columns: 22px 1fr 35px;
+  }
+
+  .pkg-price-input {
+    grid-column: 2 / 3;
+  }
+
+}
+/* ============================================================
+   ADD-ON ROWS — redesigned for clean, exact alignment
+   Columns: Item | Qty | Prefix | Rate | Unit | Amount
+   Match these widths EXACTLY in the header row in index.html:
+   grid-cols-[1fr_55px_120px_80px_110px_90px]
+   ============================================================ */
+
+#addonList{
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.addon-row{
+  display: grid;
+  grid-template-columns: 1fr 55px 120px 80px 110px 90px;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--white);
+  border: 1px solid #E9E9E9;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.addon-row:hover{
+  border-color: #D8D8D8;
+  box-shadow: 0 1px 3px rgba(26,26,26,0.05);
+}
+.addon-row:has(.addon-qty:not([value="0"])){
+  border-color: var(--brand-gold);
+  background: rgba(201,162,39,0.03);
+}
+
+.addon-row .addon-name{
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dark-text);
+  line-height: 1.25;
+}
+
+/* Shared control baseline */
+.addon-row input[type="number"],
+.addon-row select{
+  border: 1px solid #E1E1E1;
+  border-radius: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--dark-text);
+  background: var(--white);
+  width: 100%;
+  height: 34px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.addon-row input[type="number"]:focus,
+.addon-row select:focus{
+  outline: none;
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.15);
+}
+
+.addon-row .addon-qty{
+  text-align: center;
+  padding: 0 0.3rem;
+}
+
+.addon-row .addon-prefix{
+  padding: 0 0.5rem;
+  font-size: 0.72rem;
+  color: #666;
+}
+
+.addon-row .addon-rate{
+  text-align: right;
+  padding: 0 0.5rem;
+  font-weight: 600;
+}
+
+.addon-row .addon-unit{
+  padding: 0 0.5rem;
+  font-size: 0.72rem;
+}
+
+.addon-row .addon-amount{
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  text-align: right;
+  white-space: nowrap;
+}
+
+
+@media (max-width: 900px){
+  .addon-row{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "name   name"
+      "qty    prefix"
+      "rate   unit"
+      "amount amount";
+    row-gap: 0.5rem;
+  }
+  .addon-row .addon-name{
+    grid-area: name;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #F0F0F0;
+    margin-bottom: 0.1rem;
+  }
+  .addon-row .addon-qty{ grid-area: qty; }
+  .addon-row .addon-prefix{ grid-area: prefix; }
+  .addon-row .addon-rate{ grid-area: rate; text-align: left; }
+  .addon-row .addon-unit{ grid-area: unit; }
+  .addon-row .addon-amount{
+    grid-area: amount;
+    text-align: right;
+    padding-top: 0.3rem;
+    border-top: 1px solid #F0F0F0;
+  }
+  .addon-row .addon-qty,
+  .addon-row .addon-prefix,
+  .addon-row .addon-rate,
+  .addon-row .addon-unit{
+    position: relative;
+    margin-top: 1.1rem;
+  }
+  .addon-row .addon-qty::before,
+  .addon-row .addon-prefix::before,
+  .addon-row .addon-rate::before,
+  .addon-row .addon-unit::before{
+    content: attr(data-label);
+    position: absolute;
+    top: -1.05rem;
+    left: 0;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #999;
+  }
+}
+
+@media (max-width: 480px){
+  .addon-row{ padding: 0.6rem; }
+}
+
+.sheet-table.package-table tbody tr,
+.sheet-table.package-table tbody td{
+  background: transparent !important;
+  font-weight: 400 !important;
+}
+.sheet-table.package-table .pkg-check{
+  color: var(--dark-text) !important;
+  font-weight: 400 !important;
+  text-align: center;
+}
