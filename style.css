@@ -742,3 +742,42 @@ body{
   font-weight: 400 !important;
   text-align: center;
 }
+ /* Signature Table */ 
+.sheet-signature-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.sheet-signature-table td {
+  width: 40%;
+  border: 1px solid #DDD;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.68rem;
+  color: #555;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.signature-space {
+  height: 50px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.authorized-signature-img {
+  width: 70px;
+  max-width: 80%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 5px;
+}
+
+.sheet-signature-table p {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 1px solid #777;
+  font-weight: 700;
+}
