@@ -7,12 +7,7 @@ const defaultState = {
     quoteNo: '', date: new Date().toISOString().slice(0, 10)
   },
   bath: { no: '1', length: '', width: '', height: '' },
-  extraSqft: {
-    particular: '',
-    qty: '',
-    unit: 'Per Sq. Ft.',
-    rate: ''
-  },
+  extraSqft: [],
   packages: [
     { key: 'aura', name: 'Aura Package', price: 156489 },
     { key: 'prestige', name: 'Prestige Package', price: 119900 },
@@ -43,6 +38,8 @@ let state = loadState() || JSON.parse(JSON.stringify(defaultState));
 
 /* counter to keep newly added custom-addon keys unique within a session */
 let customAddonCounter = 0;
+/* counter to keep newly added Extra Sq.ft. row keys unique within a session */
+let extraSqftCounter = 0;
 
 /* ---------- Helpers ---------- */
 function formatINR(num) {
@@ -380,6 +377,160 @@ function addCustomAddon() {
 }
 
 /* ==========================================================
+   EXTRA SQ.FT. — dynamic, multi-row list
+   ========================================================== */
+function addExtraSqftRow() {
+  state.extraSqft.push({
+    key: 'extra_' + Date.now() + '_' + (extraSqftCounter++),
+    particular: '',
+    qty: '',
+    unit: 'Per Sq. Ft.',
+    rate: ''
+  });
+  renderExtraSqftForm();
+  syncPreview();
+
+  requestAnimationFrame(() => {
+    const inputs = document.querySelectorAll('.extra-particular-input');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();
+  });
+}
+
+function renderExtraSqftForm() {
+  const wrap = el('extraSqftList');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  state.extraSqft.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'extra-sqft-row';
+    rowEl.setAttribute(
+      'style',
+      'display:flex !important; flex-wrap:wrap !important; align-items:center !important; ' +
+      'gap:8px !important; width:100% !important; background:#F9FAFB !important; ' +
+      'border:1px solid #D1D5DB !important; border-radius:10px !important; ' +
+      'padding:10px !important; margin-bottom:8px !important; box-sizing:border-box !important;'
+    );
+
+    rowEl.innerHTML = `
+      <input
+        type="text"
+        class="extra-particular-input"
+        data-key="${row.key}"
+        placeholder="Particular (e.g. Extra Height Charges)"
+        value="${(row.particular || '').replace(/"/g, '&quot;')}"
+        style="flex:1 1 160px !important; min-width:140px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 9px !important; font-size:13px !important; font-family:inherit !important;"
+      />
+
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        class="extra-qty-input"
+        data-key="${row.key}"
+        placeholder="Qty"
+        value="${row.qty}"
+        style="width:70px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+      />
+
+      <select
+        class="extra-unit-input"
+        data-key="${row.key}"
+        style="width:120px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+      >
+        <option value="Per Sq. Ft.">Per Sq. Ft.</option>
+        <option value="Each">Each</option>
+        <option value="Per Unit">Per Unit</option>
+      </select>
+
+      <input
+        type="number"
+        min="0"
+        step="1"
+        class="extra-rate-input"
+        data-key="${row.key}"
+        placeholder="Rate (₹)"
+        value="${row.rate}"
+        style="width:90px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+      />
+
+      <span
+        class="extra-amount"
+        data-amount="${row.key}"
+        style="min-width:80px !important; text-align:right !important; color:#0C5C36 !important; font-weight:600 !important; font-size:13px !important;"
+      >${formatINR((parseFloat(row.qty) || 0) * (parseFloat(row.rate) || 0))}</span>
+
+      <button
+        type="button"
+        class="extra-remove"
+        data-key="${row.key}"
+        title="Remove this row"
+        style="flex:0 0 auto !important; width:28px !important; height:28px !important; display:flex !important; align-items:center !important; justify-content:center !important; background:#FEE2E2 !important; color:#DC2626 !important; border:1px solid #FCA5A5 !important; border-radius:8px !important; font-weight:800 !important; font-size:15px !important; line-height:1 !important; cursor:pointer !important; z-index:5 !important; position:relative !important;"
+      >✕</button>
+    `;
+
+    const unitSel = rowEl.querySelector('.extra-unit-input');
+    if (unitSel) unitSel.value = row.unit || 'Per Sq. Ft.';
+
+    wrap.appendChild(rowEl);
+  });
+
+  wrap.querySelectorAll('.extra-particular-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const row = state.extraSqft.find(r => r.key === e.target.dataset.key);
+      if (!row) return;
+      row.particular = e.target.value;
+      syncPreview();
+    });
+  });
+
+  wrap.querySelectorAll('.extra-qty-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const row = state.extraSqft.find(r => r.key === e.target.dataset.key);
+      if (!row) return;
+      row.qty = e.target.value;
+      updateExtraAmount(row);
+      syncPreview();
+    });
+  });
+
+  wrap.querySelectorAll('.extra-unit-input').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const row = state.extraSqft.find(r => r.key === e.target.dataset.key);
+      if (!row) return;
+      row.unit = e.target.value;
+      syncPreview();
+    });
+  });
+
+  wrap.querySelectorAll('.extra-rate-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const row = state.extraSqft.find(r => r.key === e.target.dataset.key);
+      if (!row) return;
+      row.rate = e.target.value;
+      updateExtraAmount(row);
+      syncPreview();
+    });
+  });
+
+  wrap.querySelectorAll('.extra-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const key = btn.dataset.key;
+      state.extraSqft = state.extraSqft.filter(r => r.key !== key);
+      renderExtraSqftForm();
+      syncPreview();
+    });
+  });
+}
+
+function updateExtraAmount(row) {
+  const span = document.querySelector(`.extra-amount[data-amount="${row.key}"]`);
+  if (span) span.textContent = formatINR((parseFloat(row.qty) || 0) * (parseFloat(row.rate) || 0));
+}
+
+/* ==========================================================
    BIND SIMPLE FIELDS (customer + bathroom)
    ========================================================== */
 function bindSimpleFields() {
@@ -396,11 +547,7 @@ function bindSimpleFields() {
     ['bathNo', 'bath', 'no'],
     ['bathLength', 'bath', 'length'],
     ['bathWidth', 'bath', 'width'],
-    ['bathHeight', 'bath', 'height'],
-    // Extra Sq.ft.
-    ['extraSqftParticular', 'extraSqft', 'particular'],
-    ['extraSqft', 'extraSqft', 'qty'],
-    ['extraSqftRate', 'extraSqft', 'rate']
+    ['bathHeight', 'bath', 'height']
   ];
   map.forEach(([id, group, key]) => {
 
@@ -423,16 +570,6 @@ function bindSimpleFields() {
 
   });
   updateArea();
-
-  // Extra Sq.ft. Unit (select — bound separately from the text/number map above)
-  const extraUnitSel = el('extraSqftUnit');
-  if (extraUnitSel) {
-    extraUnitSel.value = state.extraSqft.unit || 'Per Sq. Ft.';
-    extraUnitSel.addEventListener('change', () => {
-      state.extraSqft.unit = extraUnitSel.value;
-      syncPreview();
-    });
-  }
 }
 
 
@@ -455,12 +592,11 @@ function getAddonTotal() {
   return state.addons.reduce((sum, a) => sum + (a.qty || 0) * (a.rate || 0), 0);
 }
 function getExtraSqftTotal() {
-
-  const qty = parseFloat(state.extraSqft?.qty) || 0;
-
-  const rate = parseFloat(state.extraSqft?.rate) || 0;
-
-  return qty * rate;
+  return (state.extraSqft || []).reduce((sum, row) => {
+    const qty = parseFloat(row.qty) || 0;
+    const rate = parseFloat(row.rate) || 0;
+    return sum + qty * rate;
+  }, 0);
 }
 // grand total — package price is included ONLY when a package is selected
 function getGrandTotal() {
@@ -587,11 +723,7 @@ function syncPreview() {
 
   const addonTotal = getAddonTotal();
 
-  const extraParticular = (state.extraSqft?.particular || '').trim();
-  const extraQty = parseFloat(state.extraSqft?.qty) || 0;
-  const extraUnit = state.extraSqft?.unit || 'Per Sq. Ft.';
-  const extraRate = parseFloat(state.extraSqft?.rate) || 0;
-  const extraSqftTotal = extraQty * extraRate;
+  const extraSqftTotal = getExtraSqftTotal();
 
   const grandTotal = pkgPrice + addonTotal + extraSqftTotal;
 
@@ -600,20 +732,42 @@ function syncPreview() {
   el('pv-grandTotal').textContent = formatINR(grandTotal) + " (Incd. GST)";
 
   // ================= EXTRA SQ.FT. =================
+  // Only rows the user actually filled in (Qty > 0 and Rate > 0) appear here.
 
   const extraTable = el('pv-extraSqftTable');
   const extraTotalRow = el('pv-extraSqftTotalRow');
+  const extraBody = el('pv-extraSqftRows');
 
-  if (extraQty > 0 && extraRate > 0) {
+  const filledExtraRows = (state.extraSqft || []).filter(row => {
+    const qty = parseFloat(row.qty) || 0;
+    const rate = parseFloat(row.rate) || 0;
+    return qty > 0 && rate > 0;
+  });
+
+  if (extraBody) extraBody.innerHTML = '';
+
+  if (filledExtraRows.length > 0) {
 
     if (extraTable) extraTable.style.display = 'table';
     if (extraTotalRow) extraTotalRow.style.display = 'table-row';
 
-    el('pv-extraSqftParticular').textContent = extraParticular || 'Extra Sq.ft.';
-    el('pv-extraSqftQty').textContent = extraQty;
-    el('pv-extraSqftUnit').textContent = extraUnit;
-    el('pv-extraSqftRate').textContent = formatINR(extraRate);
-    el('pv-extraSqftAmount').textContent = formatINR(extraSqftTotal);
+    filledExtraRows.forEach(row => {
+      const qty = parseFloat(row.qty) || 0;
+      const rate = parseFloat(row.rate) || 0;
+      const amount = qty * rate;
+      const particular = (row.particular || '').trim() || 'Extra Sq.ft.';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${particular}</td>
+        <td class="text-center">${qty}</td>
+        <td class="text-center">${row.unit || 'Per Sq. Ft.'}</td>
+        <td class="text-right">${formatINR(rate)}</td>
+        <td class="text-right font-semibold">${formatINR(amount)}</td>
+      `;
+      if (extraBody) extraBody.appendChild(tr);
+    });
+
     el('pv-extraSqftTotal').textContent = formatINR(extraSqftTotal);
 
   } else {
@@ -678,6 +832,7 @@ el('btnReset').addEventListener('click', () => {
 });
 
 el('btnAddAddon').addEventListener('click', addCustomAddon);
+el('btnAddExtraSqft').addEventListener('click', addExtraSqftRow);
 
 el('btnPdf').addEventListener('click', async () => {
   const btn = el('btnPdf');
@@ -719,6 +874,7 @@ function init() {
   bindSimpleFields();
   renderPackageForm();
   renderAddonForm();
+  renderExtraSqftForm();
   syncPreview();
 }
 
