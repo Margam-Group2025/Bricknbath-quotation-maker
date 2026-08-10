@@ -8,7 +8,9 @@ const defaultState = {
   },
   bath: { no: '1', length: '', width: '', height: '' },
   extraSqft: {
+    particular: '',
     qty: '',
+    unit: 'Per Sq. Ft.',
     rate: ''
   },
   packages: [
@@ -38,6 +40,9 @@ const defaultState = {
 };
 
 let state = loadState() || JSON.parse(JSON.stringify(defaultState));
+
+/* counter to keep newly added custom-addon keys unique within a session */
+let customAddonCounter = 0;
 
 /* ---------- Helpers ---------- */
 function formatINR(num) {
@@ -149,57 +154,165 @@ function renderAddonForm() {
   const wrap = el('addonList');
   wrap.innerHTML = '';
 
+  const unitOptionsHtml = ADDON_UNIT_OPTIONS.map(opt =>
+    `<option value="${opt}">${opt}</option>`
+  ).join('');
+
   state.addons.forEach(addon => {
     const amount = (addon.qty || 0) * (addon.rate || 0);
-    const row = document.createElement('div');
-    row.className = 'addon-row';
 
-    const unitOptionsHtml = ADDON_UNIT_OPTIONS.map(opt =>
-      `<option value="${opt}" ${addon.unit === opt ? "selected" : ""}>${opt}</option>`
-    ).join('');
+    if (addon.custom) {
+      // ---- CUSTOM (user-added) row ----
+      // Built as its own self-contained card with forced (!important)
+      // inline styling, so it always renders correctly and stays clickable
+      // no matter what style.css / patch.css define for .addon-row.
+      const row = document.createElement('div');
+      row.className = 'addon-row-custom';
+      row.setAttribute(
+        'style',
+        'display:flex !important; flex-wrap:wrap !important; align-items:center !important; ' +
+        'gap:8px !important; width:100% !important; background:#F9FAFB !important; ' +
+        'border:1px solid #D1D5DB !important; border-radius:10px !important; ' +
+        'padding:10px !important; margin-bottom:8px !important; box-sizing:border-box !important;'
+      );
 
-    row.innerHTML = `
-      <span class="addon-name">${addon.name}</span>
+      row.innerHTML = `
+        <input
+          type="text"
+          class="addon-name-input"
+          data-key="${addon.key}"
+          placeholder="New add-on name"
+          value="${(addon.name || '').replace(/"/g, '&quot;')}"
+          style="flex:1 1 160px !important; min-width:140px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 9px !important; font-size:13px !important; font-family:inherit !important;"
+        />
 
-      <input
-        type="number"
-        min="0"
-        class="addon-qty"
-        data-key="${addon.key}"
-        data-label="Qty"
-        value="${addon.qty}"
-      />
+        <input
+          type="number"
+          min="0"
+          class="addon-qty"
+          data-key="${addon.key}"
+          placeholder="Qty"
+          value="${addon.qty}"
+          style="width:60px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+        />
 
-      <select class="addon-prefix" data-key="${addon.key}" data-label="Prefix">
-        <option value="">Select</option>
-        <option value="Starting from"
-            ${addon.prefix === "Starting from" ? "selected" : ""}>
-            Starting from
-        </option>
-      </select>
+        <select
+          class="addon-prefix"
+          data-key="${addon.key}"
+          style="width:120px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+        >
+          <option value="" ${addon.prefix === '' ? 'selected' : ''}>Select</option>
+          <option value="Starting from" ${addon.prefix === 'Starting from' ? 'selected' : ''}>Starting from</option>
+        </select>
 
-      <input
-        type="number"
-        min="0"
-        class="addon-rate"
-        data-key="${addon.key}"
-        data-label="Rate (₹)"
-        value="${addon.rate}"
-      />
+        <input
+          type="number"
+          min="0"
+          class="addon-rate"
+          data-key="${addon.key}"
+          placeholder="Rate (₹)"
+          value="${addon.rate}"
+          style="width:90px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+        />
 
-      <select
-        class="addon-unit"
-        data-key="${addon.key}"
-        data-label="Unit"
-      >
-        ${unitOptionsHtml}
-      </select>
+        <select
+          class="addon-unit"
+          data-key="${addon.key}"
+          style="width:110px !important; color:#111827 !important; background:#ffffff !important; border:1px solid #D1D5DB !important; border-radius:8px !important; padding:7px 6px !important; font-size:13px !important;"
+        >
+          ${unitOptionsHtml}
+        </select>
 
-      <span class="addon-amount" data-amount="${addon.key}">
-        ${formatINR(amount)}
-      </span>
-    `;
-    wrap.appendChild(row);
+        <span
+          class="addon-amount"
+          data-amount="${addon.key}"
+          style="min-width:80px !important; text-align:right !important; color:#0C5C36 !important; font-weight:600 !important; font-size:13px !important;"
+        >${formatINR(amount)}</span>
+
+        <button
+          type="button"
+          class="addon-remove"
+          data-key="${addon.key}"
+          title="Remove this add-on"
+          style="flex:0 0 auto !important; width:28px !important; height:28px !important; display:flex !important; align-items:center !important; justify-content:center !important; background:#FEE2E2 !important; color:#DC2626 !important; border:1px solid #FCA5A5 !important; border-radius:8px !important; font-weight:800 !important; font-size:15px !important; line-height:1 !important; cursor:pointer !important; z-index:5 !important; position:relative !important;"
+        >✕</button>
+      `;
+
+      // Correctly select the currently-set unit
+      const unitSel = row.querySelector('.addon-unit');
+      if (unitSel) unitSel.value = addon.unit || 'Each';
+
+      wrap.appendChild(row);
+    } else {
+      // ---- BUILT-IN row: unchanged original layout ----
+      const row = document.createElement('div');
+      row.className = 'addon-row';
+
+      row.innerHTML = `
+        <span class="addon-name">${addon.name}</span>
+
+        <input
+          type="number"
+          min="0"
+          class="addon-qty"
+          data-key="${addon.key}"
+          data-label="Qty"
+          value="${addon.qty}"
+        />
+
+        <select class="addon-prefix" data-key="${addon.key}" data-label="Prefix">
+          <option value="">Select</option>
+          <option value="Starting from"
+              ${addon.prefix === "Starting from" ? "selected" : ""}>
+              Starting from
+          </option>
+        </select>
+
+        <input
+          type="number"
+          min="0"
+          class="addon-rate"
+          data-key="${addon.key}"
+          data-label="Rate (₹)"
+          value="${addon.rate}"
+        />
+
+        <select
+          class="addon-unit"
+          data-key="${addon.key}"
+        >
+          ${unitOptionsHtml}
+        </select>
+
+        <span class="addon-amount" data-amount="${addon.key}">
+          ${formatINR(amount)}
+        </span>
+      `;
+
+      const unitSel = row.querySelector('.addon-unit');
+      if (unitSel) unitSel.value = addon.unit;
+
+      wrap.appendChild(row);
+    }
+  });
+
+  wrap.querySelectorAll('.addon-name-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const addon = state.addons.find(a => a.key === e.target.dataset.key);
+      if (!addon) return;
+      addon.name = e.target.value;
+      syncPreview();
+    });
+  });
+
+  wrap.querySelectorAll('.addon-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const key = btn.dataset.key;
+      state.addons = state.addons.filter(a => a.key !== key);
+      renderAddonForm();
+      syncPreview();
+    });
   });
 
   wrap.querySelectorAll('.addon-qty').forEach(inp => {
@@ -242,6 +355,31 @@ function updateAddonAmount(addon) {
 }
 
 /* ==========================================================
+   ADD CUSTOM ADD-ON
+   ========================================================== */
+function addCustomAddon() {
+  const newAddon = {
+    key: 'custom_' + Date.now() + '_' + (customAddonCounter++),
+    name: '',
+    qty: 0,
+    rate: 0,
+    unit: 'Each',
+    prefix: '',
+    custom: true
+  };
+  state.addons.push(newAddon);
+  renderAddonForm();
+  syncPreview();
+
+  // Focus the new row's name input so the user can start typing right away
+  requestAnimationFrame(() => {
+    const inputs = document.querySelectorAll('.addon-name-input');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();
+  });
+}
+
+/* ==========================================================
    BIND SIMPLE FIELDS (customer + bathroom)
    ========================================================== */
 function bindSimpleFields() {
@@ -260,6 +398,7 @@ function bindSimpleFields() {
     ['bathWidth', 'bath', 'width'],
     ['bathHeight', 'bath', 'height'],
     // Extra Sq.ft.
+    ['extraSqftParticular', 'extraSqft', 'particular'],
     ['extraSqft', 'extraSqft', 'qty'],
     ['extraSqftRate', 'extraSqft', 'rate']
   ];
@@ -284,6 +423,16 @@ function bindSimpleFields() {
 
   });
   updateArea();
+
+  // Extra Sq.ft. Unit (select — bound separately from the text/number map above)
+  const extraUnitSel = el('extraSqftUnit');
+  if (extraUnitSel) {
+    extraUnitSel.value = state.extraSqft.unit || 'Per Sq. Ft.';
+    extraUnitSel.addEventListener('change', () => {
+      state.extraSqft.unit = extraUnitSel.value;
+      syncPreview();
+    });
+  }
 }
 
 
@@ -395,30 +544,33 @@ function syncPreview() {
     });
   }
 
-  // Add-on table
+  // Add-on table — only show rows the user has actually filled in
+  // (Qty > 0). Untouched add-ons are skipped entirely, not shown as "-".
   const addonBody = el("pv-addonRows");
   addonBody.innerHTML = "";
 
-  state.addons.forEach((addon) => {
+  const filledAddons = state.addons.filter(a => (a.qty || 0) > 0);
+  const addonSection = el('pv-addonSection');
+  if (addonSection) addonSection.style.display = filledAddons.length > 0 ? '' : 'none';
+
+  filledAddons.forEach((addon) => {
     const amount = (addon.qty || 0) * (addon.rate || 0);
-    const isSelected = addon.qty > 0;
+    const displayName = (addon.name && addon.name.trim() !== '')
+      ? addon.name
+      : (addon.custom ? 'Custom Add-on' : addon.name);
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${addon.name}</td>
+      <td>${displayName}</td>
 
       <td class="text-center">
-        ${isSelected ? addon.qty : "-"}
+        ${addon.qty}
       </td>
       <td class="text-right">
-        ${
-          isSelected
-            ? `${addon.prefix} ${formatINR(addon.rate)}/- ${addon.unit}`
-            : "-"
-        }
+        ${addon.prefix} ${formatINR(addon.rate)}/- ${addon.unit}
       </td>
       <td class="text-right">
-        ${isSelected ? `${formatINR(amount)} /-*` : "-"}
+        ${formatINR(amount)} /-*
       </td>
     `;
 
@@ -428,12 +580,16 @@ function syncPreview() {
   // ================= TOTALS =================
   // Package price only counts toward the grand total when a package
   // is actually selected — otherwise it contributes ₹0.
+  // Add-on total already includes custom add-ons since getAddonTotal()
+  // sums across the full state.addons array.
 
   const pkgPrice = selectedPkg ? (selectedPkg.price || 0) : 0;
 
   const addonTotal = getAddonTotal();
 
+  const extraParticular = (state.extraSqft?.particular || '').trim();
   const extraQty = parseFloat(state.extraSqft?.qty) || 0;
+  const extraUnit = state.extraSqft?.unit || 'Per Sq. Ft.';
   const extraRate = parseFloat(state.extraSqft?.rate) || 0;
   const extraSqftTotal = extraQty * extraRate;
 
@@ -453,7 +609,9 @@ function syncPreview() {
     if (extraTable) extraTable.style.display = 'table';
     if (extraTotalRow) extraTotalRow.style.display = 'table-row';
 
+    el('pv-extraSqftParticular').textContent = extraParticular || 'Extra Sq.ft.';
     el('pv-extraSqftQty').textContent = extraQty;
+    el('pv-extraSqftUnit').textContent = extraUnit;
     el('pv-extraSqftRate').textContent = formatINR(extraRate);
     el('pv-extraSqftAmount').textContent = formatINR(extraSqftTotal);
     el('pv-extraSqftTotal').textContent = formatINR(extraSqftTotal);
@@ -518,6 +676,8 @@ el('btnReset').addEventListener('click', () => {
   init();
   showToast('Form reset');
 });
+
+el('btnAddAddon').addEventListener('click', addCustomAddon);
 
 el('btnPdf').addEventListener('click', async () => {
   const btn = el('btnPdf');
