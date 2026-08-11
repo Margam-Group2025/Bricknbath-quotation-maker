@@ -36,6 +36,34 @@ const defaultState = {
 
 let state = loadState() || JSON.parse(JSON.stringify(defaultState));
 
+/* ==========================================================
+   MIGRATE OLDER SAVED STATE
+   Earlier versions stored Extra Sq.ft. as a single object
+   ({ particular, qty, unit, rate }) instead of an array. If a
+   browser still has that shape saved in localStorage, convert
+   it into the new array format so nothing crashes or gets lost.
+   ========================================================== */
+function migrateState() {
+  if (!Array.isArray(state.extraSqft)) {
+    const old = state.extraSqft;
+    if (old && (old.particular || old.qty || old.rate)) {
+      state.extraSqft = [{
+        key: 'extra_' + Date.now(),
+        particular: old.particular || '',
+        qty: old.qty || '',
+        unit: old.unit || 'Per Sq. Ft.',
+        rate: old.rate || ''
+      }];
+    } else {
+      state.extraSqft = [];
+    }
+  }
+  if (!Array.isArray(state.addons)) {
+    state.addons = JSON.parse(JSON.stringify(defaultState.addons));
+  }
+}
+migrateState();
+
 /* counter to keep newly added custom-addon keys unique within a session */
 let customAddonCounter = 0;
 /* counter to keep newly added Extra Sq.ft. row keys unique within a session */
